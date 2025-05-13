@@ -22,8 +22,9 @@ class TurtleMover:
         self.current_x = 0
         self.current_y = 0
         self.current_theta = 0
-        self.encoder_steps = 0  # Contador de pasos del motor (simulando encoder)
         self.step_angle = 5.625  # Ángulo por paso del motor (en grados)
+        self.target_angle = 45  # Ángulo deseado en grados
+        self.steps_needed = self.target_angle / self.step_angle  # Número de pasos
 
     def update_position(self, data):
         """Actualizar la posición y orientación actuales de la tortuga"""
@@ -31,47 +32,32 @@ class TurtleMover:
         self.current_y = data.y
         self.current_theta = data.theta
 
-    def rotate_turtle(self, target_theta):
-        """Rotar la tortuga hacia el ángulo deseado con corrección"""
+    def rotate_turtle(self):
+        """Simular el movimiento en pasos de 5.625 grados"""
         velocity_msg = Twist()
         Kp_rotation = 4.0  # Constante proporcional para la rotación
+        steps_taken = 0
 
-        while not rospy.is_shutdown():
-            # Calcular el error de ángulo
-            angle_error = target_theta - self.current_theta
-            angle_error = (angle_error + 3.14159) % (2 * 3.14159) - 3.14159
-
-            velocity_msg.angular.z = Kp_rotation * angle_error
+        # Mientras no se haya completado el giro
+        while steps_taken < self.steps_needed:
+            # Rotar en incrementos de 5.625 grados
+            velocity_msg.angular.z = Kp_rotation * self.step_angle
             self.velocity_publisher.publish(velocity_msg)
+            
+            rospy.loginfo(f"Paso {steps_taken + 1}: Girando {self.step_angle} grados.")
 
-            rospy.loginfo("Error de ángulo: %.4f°", degrees(angle_error))
+            # Aumentar el contador de pasos
+            steps_taken += 1
+            rospy.sleep(1)  # Pausar por un segundo entre cada paso
 
-            # Detener la rotación cuando el error sea pequeño
-            if abs(angle_error) < 0.05:
-                break
-
-            self.update_rate.sleep()
-
-        # Detener la rotación
+        # Detener la tortuga
         velocity_msg.angular.z = 0
         self.velocity_publisher.publish(velocity_msg)
-
-    def simulate_button_press(self):
-        """Esperar que el usuario presione una tecla para girar 45 grados"""
-        while not rospy.is_shutdown():
-            input("Presiona Enter para mover la tortuga 45 grados...")  # Simula un botón de presión
-            self.encoder_steps += 1  # Incrementar los pasos simulando el encoder
-
-            print(f"Simulación de encoder - Pasos: {self.encoder_steps}")
-            target_theta = radians(45)  # Convertir 45 grados a radianes
-            self.rotate_turtle(target_theta)  # Hacer que la tortuga rote 45 grados
-
-            # Después de girar, espera una nueva tecla para el siguiente movimiento
-            rospy.loginfo("Tortuga ha girado 45 grados. Esperando la siguiente pulsación...\n")
+        rospy.loginfo("Giro completado.")
 
     def start(self):
-        """Función principal que gestiona el movimiento hacia la meta"""
-        self.simulate_button_press()
+        """Función principal para controlar el movimiento hacia la meta"""
+        self.rotate_turtle()
 
 if __name__ == '__main__':
     try:
