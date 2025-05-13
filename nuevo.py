@@ -9,7 +9,7 @@ class TurtleRotationProportionalControl:
     def __init__(self):
         rospy.init_node('control_tortuga_rotacion', anonymous=True)
         
-        # Suscripción al topic de la posición de la tortuga
+        # Suscripción al topic de la posición de la tortuga AAAAAAAAAAAAAAAAAAAAAA
         self.pose_subscriber = rospy.Subscriber('/turtle1/pose', Pose, self.pose_callback)
         
         # Publicación en el topic de los comandos de movimiento de la tortuga
