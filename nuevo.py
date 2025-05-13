@@ -36,6 +36,7 @@ class TurtleMover:
         Kp_rotation = 4.0  # Constante proporcional para la rotación
 
         while not rospy.is_shutdown():
+            # Calcular el error de ángulo
             angle_error = target_theta - self.current_theta
             angle_error = (angle_error + 3.14159) % (2 * 3.14159) - 3.14159
 
