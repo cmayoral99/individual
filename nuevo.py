@@ -3,7 +3,7 @@
 import rospy
 from geometry_msgs.msg import Twist
 from turtlesim.msg import Pose
-from math import atan2, sqrt, radians, degrees
+from math import radians, degrees
 
 class TurtleMover:
     def __init__(self):
@@ -30,51 +30,6 @@ class TurtleMover:
         self.current_y = data.y
         self.current_theta = data.theta
 
-    def get_target_position(self):
-        """Solicitar la nueva meta y orientación al usuario"""
-        print("\nIntroduce la nueva meta para la tortuga:")
-        target_x = float(input("Coordenada x de la meta: "))
-        target_y = float(input("Coordenada y de la meta: "))
-        target_theta_deg = float(input("Ángulo de orientación deseado (en grados): "))
-        return target_x, target_y, radians(target_theta_deg)
-
-    def move_turtle(self, target_x, target_y):
-        """Mover la tortuga hacia la meta usando control proporcional y simulando encoder"""
-        velocity_msg = Twist()
-        Kp_distance = 1.5  # Constante proporcional para la distancia
-        Kp_angle = 6.0  # Constante proporcional para el ángulo
-
-        while not rospy.is_shutdown():
-            # Calcular la distancia a la meta (DTG) y el ángulo hacia la meta (ATG)
-            distance_to_goal = sqrt((target_x - self.current_x)**2 + (target_y - self.current_y)**2)
-            angle_to_goal = atan2(target_y - self.current_y, target_x - self.current_x)
-            angle_diff = angle_to_goal - self.current_theta
-
-            # Normalización del ángulo para evitar valores fuera de rango
-            angle_diff = (angle_diff + 3.14159) % (2 * 3.14159) - 3.14159
-
-            # Velocidades proporcionales a los errores calculados
-            velocity_msg.linear.x = Kp_distance * distance_to_goal
-            velocity_msg.angular.z = Kp_angle * angle_diff
-
-            self.velocity_publisher.publish(velocity_msg)
-
-            # Simular el encoder: incrementamos el contador de pasos de motor
-            self.encoder_steps += 1
-            rospy.loginfo("Encoder pasos: %d | DTG: %.4f | ATG: %.4f°", self.encoder_steps, distance_to_goal, degrees(angle_diff))
-
-            # Detener si estamos suficientemente cerca de la meta
-            if distance_to_goal < 0.1:
-                break
-
-            self.update_rate.sleep()
-
-        # Detener la tortuga al llegar a la meta
-        velocity_msg.linear.x = 0
-        velocity_msg.angular.z = 0
-        self.velocity_publisher.publish(velocity_msg)
-        rospy.loginfo("Meta alcanzada.\n")
-
     def rotate_turtle(self, target_theta):
         """Rotar la tortuga hacia el ángulo deseado"""
         velocity_msg = Twist()
@@ -99,12 +54,18 @@ class TurtleMover:
         velocity_msg.angular.z = 0
         self.velocity_publisher.publish(velocity_msg)
 
+    def simulate_button_press(self):
+        """Esperar que el usuario presione una tecla para girar 45 grados"""
+        while not rospy.is_shutdown():
+            input("Presiona Enter para mover la tortuga 45 grados...")  # Simula un botón de presión
+            self.encoder_steps += 1  # Incrementar los pasos simulando el encoder
+
+            print(f"Simulación de encoder - Pasos: {self.encoder_steps}")
+            self.rotate_turtle(radians(45))  # Hacer que la tortuga rote 45 grados
+
     def start(self):
         """Función principal que gestiona el movimiento hacia la meta"""
-        while not rospy.is_shutdown():
-            target_x, target_y, target_theta = self.get_target_position()
-            self.move_turtle(target_x, target_y)
-            self.rotate_turtle(target_theta)
+        self.simulate_button_press()
 
 if __name__ == '__main__':
     try:
