@@ -63,6 +63,9 @@ class TurtleMover:
             print(f"Simulación de encoder - Pasos: {self.encoder_steps}")
             self.rotate_turtle(radians(45))  # Hacer que la tortuga rote 45 grados
 
+            # Después de girar, espera una nueva tecla para el siguiente movimiento
+            rospy.loginfo("Tortuga ha girado 45 grados. Esperando la siguiente pulsación...\n")
+
     def start(self):
         """Función principal que gestiona el movimiento hacia la meta"""
         self.simulate_button_press()
