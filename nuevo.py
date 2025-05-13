@@ -5,71 +5,82 @@ from geometry_msgs.msg import Twist
 from turtlesim.msg import Pose
 from math import radians, degrees
 
-class TurtleMover:
+class TurtleRotationProportionalControl:
     def __init__(self):
-        # Inicializa el nodo de ROSiiii
-        rospy.init_node('turtle_mover', anonymous=True)
-
-        # Subscripción a la posición de la tortuga
-        self.pose_subscriber = rospy.Subscriber('/turtle1/pose', Pose, self.update_position)
-        # Publicación de los comandos de velocidad
+        rospy.init_node('control_tortuga_rotacion', anonymous=True)
+        
+        # Suscripción al topic de la posición de la tortuga
+        self.pose_subscriber = rospy.Subscriber('/turtle1/pose', Pose, self.pose_callback)
+        
+        # Publicación en el topic de los comandos de movimiento de la tortuga
         self.velocity_publisher = rospy.Publisher('/turtle1/cmd_vel', Twist, queue_size=10)
+        
+        # Tasa de publicación de mensajes (10 Hz)
+        self.rate = rospy.Rate(10)
+        
+        self.current_theta = 0  # Ángulo actual de la tortuga
 
-        # Frecuencia para mantener el control de la tortuga
-        self.update_rate = rospy.Rate(10)  # 10 Hz
+    def pose_callback(self, pose):
+        # Función que se ejecuta cada vez que llega una actualización de la posición de la tortuga
+        self.current_theta = pose.theta
 
-        # Variables de posición inicial
-        self.current_x = 0
-        self.current_y = 0
-        self.current_theta = 0
-        self.step_angle = 5.625  # Ángulo por paso del motor (en grados)
-        self.target_angle = 45  # Ángulo deseado en grados
-        self.steps_needed = int(self.target_angle / self.step_angle)  # Número de pasos (8 pasos)
-        self.steps_taken = 0  # Número de pasos dados
+    def rotate_turtle_to_target(self, target_theta):
+        # Constante de proporcionalidad del controlador (ajustable)
+        Kp = 2.0
+        
+        # El ángulo objetivo es 45 grados (convertido a radianes)
+        target_theta = radians(target_theta)
+        
+        # Variable para calcular el error de ángulo
+        error_theta = target_theta - self.current_theta
+        
+        while not rospy.is_shutdown():
+            # Calcular el error de ángulo
+            error_theta = target_theta - self.current_theta
 
-    def update_position(self, data):
-        """Actualizar la posición y orientación actuales de la tortuga"""
-        self.current_x = data.x
-        self.current_y = data.y
-        self.current_theta = data.theta
+            # Asegurar que el error esté en el rango [-pi, pi] para una rotación más precisa
+            error_theta = (error_theta + 3.14159) % (2 * 3.14159) - 3.14159
 
-    def rotate_turtle(self):
-        """Simular el movimiento en pasos de 5.625 grados"""
-        velocity_msg = Twist()
-        Kp_rotation = 4.0  # Constante proporcional para la rotación
-        total_rotation = 0  # Acumulamos el total de rotación de la tortuga
+            # Calcular la velocidad angular (proporcional al error)
+            vel_z = Kp * error_theta
 
-        while self.steps_taken < self.steps_needed:
-            # Rotar en incrementos de 5.625 grados
-            velocity_msg.angular.z = Kp_rotation * self.step_angle
-            self.velocity_publisher.publish(velocity_msg)
+            # Crear el mensaje Twist para mover la tortuga
+            twist_msg = Twist()
+            twist_msg.angular.z = vel_z
             
-            rospy.loginfo(f"Paso {self.steps_taken + 1}: Girando {self.step_angle} grados.")
+            # Publicar el comando de rotación
+            self.velocity_publisher.publish(twist_msg)
+
+            # Imprimir la información en la consola
+            rospy.loginfo(f"Error de ángulo: {degrees(error_theta):.2f}°")
             
-            # Esperamos un poco entre cada paso (ajustamos el tiempo)
-            rospy.sleep(1)  # Pausar por un segundo entre cada paso
-
-            # Actualizar la rotación total
-            total_rotation += self.step_angle
-            self.steps_taken += 1
-
-            # Verificar si alcanzamos el ángulo objetivo
-            if self.steps_taken == self.steps_needed:
-                rospy.loginfo(f"Se alcanzaron los {total_rotation} grados.")
+            # Verificar si hemos alcanzado el ángulo objetivo (error pequeño)
+            if abs(error_theta) < 0.1:  # Se puede ajustar el umbral de error
+                rospy.loginfo(f"Ángulo objetivo alcanzado: {degrees(target_theta):.2f}°")
                 break
 
-        # Detener la tortuga
-        velocity_msg.angular.z = 0
-        self.velocity_publisher.publish(velocity_msg)
-        rospy.loginfo("Giro completado.")
+            # Esperar hasta la siguiente iteración
+            self.rate.sleep()
 
-    def start(self):
-        """Función principal para controlar el movimiento hacia la meta"""
-        self.rotate_turtle()
+        # Detener la rotación
+        twist_msg.angular.z = 0
+        self.velocity_publisher.publish(twist_msg)
+
+    def get_target_angle_from_user(self):
+        print("Ingrese el ángulo objetivo de rotación (en grados):")
+        return float(input("Ángulo deseado (grados): "))
+
+    def rotate_turtle_interactively(self):
+        while not rospy.is_shutdown():
+            # Obtener el ángulo objetivo del usuario
+            target_angle = self.get_target_angle_from_user()
+
+            # Mover la tortuga al ángulo objetivo
+            self.rotate_turtle_to_target(radians(target_angle))
 
 if __name__ == '__main__':
     try:
-        turtle_controller = TurtleMover()
-        turtle_controller.start()
+        turtle_rotation_control = TurtleRotationProportionalControl()
+        turtle_rotation_control.rotate_turtle_interactively()
     except rospy.ROSInterruptException:
         pass
