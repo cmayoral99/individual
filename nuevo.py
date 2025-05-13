@@ -24,7 +24,7 @@ class TurtleMover:
         self.current_theta = 0
         self.step_angle = 5.625  # Ángulo por paso del motor (en grados)
         self.target_angle = 45  # Ángulo deseado en grados
-        self.steps_needed = self.target_angle / self.step_angle  # Número de pasos
+        self.steps_needed = int(self.target_angle / self.step_angle)  # Número de pasos (8 pasos)
 
     def update_position(self, data):
         """Actualizar la posición y orientación actuales de la tortuga"""
@@ -37,18 +37,26 @@ class TurtleMover:
         velocity_msg = Twist()
         Kp_rotation = 4.0  # Constante proporcional para la rotación
         steps_taken = 0
+        total_rotation = 0  # Acumulamos el total de rotación de la tortuga
 
-        # Mientras no se haya completado el giro
         while steps_taken < self.steps_needed:
             # Rotar en incrementos de 5.625 grados
             velocity_msg.angular.z = Kp_rotation * self.step_angle
             self.velocity_publisher.publish(velocity_msg)
             
             rospy.loginfo(f"Paso {steps_taken + 1}: Girando {self.step_angle} grados.")
-
-            # Aumentar el contador de pasos
-            steps_taken += 1
+            
+            # Esperamos un poco entre cada paso
             rospy.sleep(1)  # Pausar por un segundo entre cada paso
+
+            # Actualizar la rotación total
+            total_rotation += self.step_angle
+            steps_taken += 1
+
+            # Verificar si alcanzamos el ángulo objetivo
+            if abs(total_rotation - self.target_angle) < 0.1:
+                rospy.loginfo(f"Se alcanzaron los {total_rotation} grados.")
+                break
 
         # Detener la tortuga
         velocity_msg.angular.z = 0
