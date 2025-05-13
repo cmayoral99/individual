@@ -26,9 +26,9 @@ class TurtleRotationProportionalControl:
 
     def rotate_turtle_to_target(self, target_theta):
         # Constante de proporcionalidad del controlador (ajustable)
-        Kp = 5.0  # Aumentamos Kp para hacer la rotación más rápida
+        Kp = 10.0  # Aumentar Kp para hacer la rotación más rápida
         
-        # El ángulo objetivo es 45 grados (convertido a radianes)
+        # El ángulo objetivo es el que el usuario ingresa (convertido a radianes)
         target_theta = radians(target_theta)
         
         # Variable para calcular el error de ángulo
@@ -55,14 +55,9 @@ class TurtleRotationProportionalControl:
             rospy.loginfo(f"Error de ángulo: {degrees(error_theta):.2f}°")
             
             # Verificar si hemos alcanzado el ángulo objetivo (error pequeño)
-            if abs(error_theta) < 0.1:  # Se puede ajustar el umbral de error
+            if abs(error_theta) < 0.05:  # Umbral de error ajustado a 0.05 radianes
                 rospy.loginfo(f"Ángulo objetivo alcanzado: {degrees(target_theta):.2f}°")
                 break
-
-            # Corrección de error: si el ángulo se sobrepasó, corregir el movimiento
-            if abs(error_theta) > radians(45):
-                rospy.loginfo("Se sobrepasó el ángulo, corrigiendo la rotación...")
-                target_theta = self.current_theta  # Ajustar el objetivo para evitar sobrepasar
 
             # Esperar hasta la siguiente iteración
             self.rate.sleep()
