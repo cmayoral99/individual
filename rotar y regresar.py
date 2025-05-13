@@ -56,6 +56,7 @@ class TurtleRotationProportionalControl:
             
             # Verificar si hemos alcanzado el ángulo objetivo (error pequeño)
             if abs(error_theta) < 0.1:  # Se puede ajustar el umbral de error
+                rospy.loginfo(f"Ángulo objetivo alcanzado: {degrees(target_theta):.2f}°")
                 break
 
             # Esperar hasta la siguiente iteración
@@ -64,6 +65,10 @@ class TurtleRotationProportionalControl:
         # Detener la rotación
         twist_msg.angular.z = 0
         self.velocity_publisher.publish(twist_msg)
+
+        # Esperar 10 segundos antes de comenzar el regreso
+        rospy.loginfo("Esperando 10 segundos antes de regresar a cero grados...")
+        rospy.sleep(10)  # Esperar 10 segundos
 
     def rotate_back_to_zero(self):
         """Hacer que la tortuga regrese a cero grados"""
