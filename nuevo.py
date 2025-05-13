@@ -7,7 +7,7 @@ from math import radians, degrees
 
 class TurtleMover:
     def __init__(self):
-        # Inicializa el nodo de ROSaaa
+        # Inicializa el nodo de ROSeeee
         rospy.init_node('turtle_mover', anonymous=True)
 
         # Subscripción a la posición de la tortuga
@@ -46,7 +46,7 @@ class TurtleMover:
             
             rospy.loginfo(f"Paso {steps_taken + 1}: Girando {self.step_angle} grados.")
             
-            # Esperamos un poco entre cada paso
+            # Esperamos un poco entre cada paso (ajustamos el tiempo)
             rospy.sleep(1)  # Pausar por un segundo entre cada paso
 
             # Actualizar la rotación total
