@@ -26,7 +26,7 @@ class TurtleRotationProportionalControl:
 
     def rotate_turtle_to_target(self, target_theta):
         # Constante de proporcionalidad del controlador (ajustable)
-        Kp = 2.0
+        Kp = 5.0  # Aumentamos Kp para hacer la rotación más rápida
         
         # El ángulo objetivo es 45 grados (convertido a radianes)
         target_theta = radians(target_theta)
@@ -76,7 +76,7 @@ class TurtleRotationProportionalControl:
             target_angle = self.get_target_angle_from_user()
 
             # Mover la tortuga al ángulo objetivo
-            self.rotate_turtle_to_target(radians(target_angle))
+            self.rotate_turtle_to_target(target_angle)
 
 if __name__ == '__main__':
     try:
