@@ -59,6 +59,11 @@ class TurtleRotationProportionalControl:
                 rospy.loginfo(f"Ángulo objetivo alcanzado: {degrees(target_theta):.2f}°")
                 break
 
+            # Corrección de error: si el ángulo se sobrepasó, corregir el movimiento
+            if abs(error_theta) > radians(45):
+                rospy.loginfo("Se sobrepasó el ángulo, corrigiendo la rotación...")
+                target_theta = self.current_theta  # Ajustar el objetivo para evitar sobrepasar
+
             # Esperar hasta la siguiente iteración
             self.rate.sleep()
 
