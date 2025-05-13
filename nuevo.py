@@ -1,42 +1,79 @@
+#!/usr/bin/env python3
+
 import rospy
-from turtlesim.srv import Spawn
-from turtlesim.msg import Pose
 from geometry_msgs.msg import Twist
+from turtlesim.msg import Pose
+from math import radians, degrees
 
-def move_turtle_45_degrees():
-    # Iniciar el nodo
-    rospy.init_node('turtle_45_control')
+class TurtleMover:
+    def __init__(self):
+        # Inicializa el nodo de ROS
+        rospy.init_node('turtle_mover', anonymous=True)
 
-    # Llamar al servicio para crear una tortuga
-    rospy.wait_for_service('/spawn')
-    spawn_turtle = rospy.ServiceProxy('/spawn', Spawn)
-    spawn_turtle(5.5, 5.5, 0, 'turtle1')
+        # Subscripción a la posición de la tortuga
+        self.pose_subscriber = rospy.Subscriber('/turtle1/pose', Pose, self.update_position)
+        # Publicación de los comandos de velocidad
+        self.velocity_publisher = rospy.Publisher('/turtle1/cmd_vel', Twist, queue_size=10)
 
-    # Inicializar el publisher para controlar el movimiento de la tortuga
-    pub = rospy.Publisher('/turtle1/cmd_vel', Twist, queue_size=10)
-    rate = rospy.Rate(10)  # Frecuencia de 10 Hz
-    
-    # Crear el mensaje Twist para controlar el movimiento
-    move_cmd = Twist()
+        # Frecuencia para mantener el control de la tortuga
+        self.update_rate = rospy.Rate(10)  # 10 Hz
 
-    # Establecer velocidad lineal y angular (giro de 45 grados)
-    move_cmd.linear.x = 0.0  # No se moverá en línea recta
-    move_cmd.angular.z = 0.785  # 45 grados en radianes (0.785 rad)
+        # Variables de posición inicial
+        self.current_x = 0
+        self.current_y = 0
+        self.current_theta = 0
+        self.encoder_steps = 0  # Contador de pasos del motor (simulando encoder)
 
-    # Gira la tortuga 45 grados
-    start_time = rospy.Time.now()
-    while rospy.Time.now() - start_time < rospy.Duration(5):  # Gira durante 5 segundos
-        pub.publish(move_cmd)
-        rate.sleep()
+    def update_position(self, data):
+        """Actualizar la posición y orientación actuales de la tortuga"""
+        self.current_x = data.x
+        self.current_y = data.y
+        self.current_theta = data.theta
 
-    # Detener la tortuga después de girar
-    move_cmd.angular.z = 0.0
-    pub.publish(move_cmd)
-    
-    rospy.spin()
+    def rotate_turtle(self, target_theta):
+        """Rotar la tortuga hacia el ángulo deseado"""
+        velocity_msg = Twist()
+        Kp_rotation = 4.0  # Constante proporcional para la rotación
+
+        while not rospy.is_shutdown():
+            # Calcular el error de ángulo
+            angle_error = target_theta - self.current_theta
+            angle_error = (angle_error + 3.14159) % (2 * 3.14159) - 3.14159
+
+            velocity_msg.angular.z = Kp_rotation * angle_error
+            self.velocity_publisher.publish(velocity_msg)
+
+            rospy.loginfo("Error de ángulo: %.4f°", degrees(angle_error))
+
+            # Detener la rotación cuando el error sea pequeño
+            if abs(angle_error) < 0.05:
+                break
+
+            self.update_rate.sleep()
+
+        # Detener la rotación
+        velocity_msg.angular.z = 0
+        self.velocity_publisher.publish(velocity_msg)
+
+    def simulate_button_press(self):
+        """Esperar que el usuario presione una tecla para girar 45 grados"""
+        while not rospy.is_shutdown():
+            input("Presiona Enter para mover la tortuga 45 grados...")  # Simula un botón de presión
+            self.encoder_steps += 1  # Incrementar los pasos simulando el encoder
+
+            print(f"Simulación de encoder - Pasos: {self.encoder_steps}")
+            self.rotate_turtle(radians(45))  # Hacer que la tortuga rote 45 grados
+
+            # Después de girar, espera una nueva tecla para el siguiente movimiento
+            rospy.loginfo("Tortuga ha girado 45 grados. Esperando la siguiente pulsación...\n")
+
+    def start(self):
+        """Función principal que gestiona el movimiento hacia la meta"""
+        self.simulate_button_press()
 
 if __name__ == '__main__':
     try:
-        move_turtle_45_degrees()
+        turtle_controller = TurtleMover()
+        turtle_controller.start()
     except rospy.ROSInterruptException:
         pass
