@@ -56,7 +56,6 @@ class TurtleRotationProportionalControl:
             
             # Verificar si hemos alcanzado el ángulo objetivo (error pequeño)
             if abs(error_theta) < 0.1:  # Se puede ajustar el umbral de error
-                rospy.loginfo(f"Ángulo objetivo alcanzado: {degrees(target_theta):.2f}°")
                 break
 
             # Esperar hasta la siguiente iteración
