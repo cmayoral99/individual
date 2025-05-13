@@ -23,6 +23,7 @@ class TurtleMover:
         self.current_y = 0
         self.current_theta = 0
         self.encoder_steps = 0  # Contador de pasos del motor (simulando encoder)
+        self.step_angle = 5.625  # Ángulo por paso del motor (en grados)
 
     def update_position(self, data):
         """Actualizar la posición y orientación actuales de la tortuga"""
@@ -31,7 +32,7 @@ class TurtleMover:
         self.current_theta = data.theta
 
     def rotate_turtle(self, target_theta):
-        """Rotar la tortuga hacia el ángulo deseado"""
+        """Rotar la tortuga hacia el ángulo deseado con corrección"""
         velocity_msg = Twist()
         Kp_rotation = 4.0  # Constante proporcional para la rotación
 
@@ -62,7 +63,8 @@ class TurtleMover:
             self.encoder_steps += 1  # Incrementar los pasos simulando el encoder
 
             print(f"Simulación de encoder - Pasos: {self.encoder_steps}")
-            self.rotate_turtle(radians(45))  # Hacer que la tortuga rote 45 grados
+            target_theta = radians(45)  # Convertir 45 grados a radianes
+            self.rotate_turtle(target_theta)  # Hacer que la tortuga rote 45 grados
 
             # Después de girar, espera una nueva tecla para el siguiente movimiento
             rospy.loginfo("Tortuga ha girado 45 grados. Esperando la siguiente pulsación...\n")
