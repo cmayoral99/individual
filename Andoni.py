@@ -1,5 +1,3 @@
-a ver intenta este mi VM esta lentisisisima 
-
 #!/usr/bin/env python3
 
 import rospy
@@ -10,7 +8,7 @@ from math import radians, degrees
 import matplotlib.pyplot as plt
 
 class TurtleRotationProportionalControl:
-    def _init_(self):
+    def __init__(self):
         # Inicializa el nodo ROS
         rospy.init_node('control_tortuga_rotacion', anonymous=True)
         
@@ -34,9 +32,11 @@ class TurtleRotationProportionalControl:
         self.rate = rospy.Rate(10)
         
         # Estado interno
-        self.current_theta = 0
+        self.current_theta = 0.0
 
     def pose_callback(self, pose: Pose):
+        self.current_theta = pose.theta
+        
         # Registra tiempo y posición para graficar
         if self.start_time is not None:
             t = rospy.get_time() - self.start_time
