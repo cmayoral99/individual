@@ -40,6 +40,8 @@ class TurtleRotationProportionalControl:
             twist.angular.z = vel_z
             self.velocity_publisher.publish(twist)
 
+            rospy.loginfo(f"Error de ángulo: {degrees(error):.2f}°")
+
             t = rospy.get_time() - self.start_time
             self.times.append(t)
             self.angles_deg.append(degrees(self.current_theta))
